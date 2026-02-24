@@ -1,0 +1,1088 @@
+{% extends "base.html" %}
+
+{% block title %}Compare Results - {{ query }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Modern UI Styles */
+    :root {
+        --amazon-color: #ff9900;
+        --daraz-color: #f85606;
+        --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    .comparison-header {
+        background: var(--primary-gradient);
+        color: white;
+        padding: 2rem;
+        border-radius: 15px;
+        margin-bottom: 2rem;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+
+    .platform-tabs {
+        border-bottom: none;
+        margin-bottom: 2rem;
+    }
+
+    .platform-tabs .nav-link {
+        border: none;
+        color: #666;
+        font-weight: 600;
+        padding: 1rem 2rem;
+        border-radius: 10px 10px 0 0;
+        transition: all 0.3s;
+    }
+
+    .platform-tabs .nav-link:hover {
+        background: rgba(255,153,0,0.1);
+    }
+
+    .platform-tabs .nav-link.active {
+        background: var(--amazon-color);
+        color: white;
+    }
+
+    .platform-tabs .nav-link.daraz.active {
+        background: var(--daraz-color);
+        color: white;
+    }
+
+    /* Product Cards */
+    .product-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+        gap: 1.5rem;
+        padding: 1rem 0;
+    }
+
+    .product-card {
+        background: white;
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        transition: all 0.3s ease;
+        position: relative;
+        border: 1px solid #eee;
+    }
+
+    .product-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 30px rgba(0,0,0,0.15);
+    }
+
+    .product-card.amazon {
+        border-top: 4px solid var(--amazon-color);
+    }
+
+    .product-card.daraz {
+        border-top: 4px solid var(--daraz-color);
+    }
+
+    .product-badge {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        padding: 5px 15px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        z-index: 2;
+    }
+
+    .badge-amazon {
+        background: var(--amazon-color);
+        color: white;
+    }
+
+    .badge-daraz {
+        background: var(--daraz-color);
+        color: white;
+    }
+
+    .badge-sponsored {
+        background: #ffc107;
+        color: #000;
+        top: 10px;
+        left: 10px;
+        right: auto;
+    }
+
+    .product-image-wrapper {
+        height: 220px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #f8f9fa;
+        padding: 1rem;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .product-image {
+        max-height: 180px;
+        max-width: 100%;
+        object-fit: contain;
+        transition: transform 0.3s;
+    }
+
+    .product-card:hover .product-image {
+        transform: scale(1.05);
+    }
+
+    .product-info {
+        padding: 1.5rem;
+    }
+
+    .product-title {
+        font-size: 1rem;
+        font-weight: 600;
+        margin-bottom: 0.75rem;
+        height: 3rem;
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        color: #333;
+    }
+
+    .product-price-section {
+        display: flex;
+        align-items: baseline;
+        gap: 0.5rem;
+        margin-bottom: 0.75rem;
+        flex-wrap: wrap;
+    }
+
+    .current-price {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: #28a745;
+    }
+
+    .old-price {
+        font-size: 0.9rem;
+        color: #999;
+        text-decoration: line-through;
+    }
+
+    .currency-badge {
+        background: #e9ecef;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #495057;
+    }
+
+    .product-rating {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 0.75rem;
+        flex-wrap: wrap;
+    }
+
+    .stars {
+        color: #ffc107;
+        font-size: 0.9rem;
+    }
+
+    .rating-value {
+        font-weight: 600;
+        color: #555;
+    }
+
+    .review-count {
+        color: #888;
+        font-size: 0.85rem;
+    }
+
+    .product-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid #eee;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+
+    .product-asin {
+        font-size: 0.8rem;
+        color: #999;
+    }
+
+    .view-btn {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 0.5rem 1.5rem;
+        border-radius: 25px;
+        font-size: 0.9rem;
+        transition: all 0.3s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+    }
+
+    .view-btn:hover {
+        transform: scale(1.05);
+        color: white;
+        box-shadow: 0 5px 15px rgba(102,126,234,0.4);
+    }
+
+    /* Stats Cards */
+    .stats-card {
+        background: rgb(255, 181, 181);
+        border-radius: 10px;
+        padding: 1.5rem;
+        text-align: center;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        transition: all 0.3s;
+        height: 100%;
+    }
+
+    .stats-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+    }
+
+    .stats-number {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #333;
+        margin: 0.5rem 0;
+    }
+
+    .stats-label {
+        color: #888;
+        font-size: 0.9rem;
+    }
+
+    /* Price Distribution */
+    .price-distribution {
+        padding: 1rem;
+        background: #f8f9fa;
+        border-radius: 8px;
+        margin-top: 1rem;
+    }
+
+    .price-distribution small {
+        font-weight: 600;
+        color: #4a5568;
+        display: block;
+        margin-bottom: 0.5rem;
+    }
+
+    .progress {
+        height: 8px;
+        border-radius: 20px;
+        background: #e2e8f0;
+        margin-bottom: 1rem;
+    }
+
+    .progress-bar {
+        border-radius: 20px;
+        transition: width 1s ease;
+    }
+
+    /* Filter Section */
+    .filter-section {
+        background: white;
+        padding: 1rem;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+
+    /* Total Products Alert */
+    .total-products-alert {
+        background: #e7f5ff;
+        border-left: 4px solid #339af0;
+        padding: 1rem;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+        font-weight: 500;
+    }
+
+    /* Comparison Table */
+    .comparison-table {
+        background: white;
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        margin-top: 2rem;
+    }
+
+    .comparison-table th {
+        background: #f8f9fa;
+        font-weight: 600;
+        padding: 1rem;
+    }
+
+    .comparison-table td {
+        padding: 1rem;
+        vertical-align: middle;
+    }
+
+    .platform-icon {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        margin-right: 0.5rem;
+    }
+
+    .icon-amazon {
+        background: var(--amazon-color);
+    }
+
+    .icon-daraz {
+        background: var(--daraz-color);
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .product-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .comparison-header {
+            padding: 1rem;
+        }
+        
+        .product-image-wrapper {
+            height: 180px;
+        }
+        
+        .stats-card {
+            margin-bottom: 1rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="comparison-header text-center">
+    <h1 class="mb-3">
+        <i class="bi bi-arrow-left-right"></i> Product Comparison
+    </h1>
+    <p class="lead mb-0">
+        Search results for: <strong>"{{ query }}"</strong>
+        <span class="ms-3 badge bg-light text-dark">
+            <i class="bi bi-clock"></i> {{ timestamp }}
+        </span>
+    </p>
+</div>
+
+<!-- Filter Section -->
+<div class="filter-section">
+    <div class="row">
+        <div class="col-md-4">
+            <input type="text" class="form-control" id="filterInput" 
+                   placeholder="🔍 Filter products by name..." onkeyup="filterProducts()">
+        </div>
+        <div class="col-md-3">
+            <select class="form-select" id="sortSelect" onchange="sortProducts()">
+                <option value="">Sort by...</option>
+                <option value="price-asc">Price: Low to High</option>
+                <option value="price-desc">Price: High to Low</option>
+                <option value="rating">Rating: High to Low</option>
+                <option value="title">Title: A to Z</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <select class="form-select" id="platformFilter" onchange="filterByPlatform()">
+                <option value="all">All Platforms</option>
+                <option value="amazon">Amazon Only</option>
+                <option value="daraz">Daraz Only</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <button class="btn btn-outline-primary w-100" onclick="resetFilters()">
+                <i class="bi bi-arrow-counterclockwise"></i> Reset
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Total Products Alert - Dark Card Style -->
+<div class="total-products-alert" style="background: #1e293b; color: white; border-left: 4px solid #3b82f6; border-radius: 12px; padding: 1rem 1.5rem; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);">
+    <div class="d-flex align-items-center">
+        <div class="me-3" style="width: 40px; height: 40px; background: rgba(59, 130, 246, 0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+            <i class="bi bi-database text-primary"></i>
+        </div>
+        <div class="flex-grow-1">
+            <span class="fw-bold fs-5">{{ amazon_results|length + daraz_results|length }}</span>
+            <span class="text-light-emphasis ms-2">total products</span>
+            <div class="mt-1">
+                <span class="badge bg-warning text-dark me-2"><i class="bi bi-amazon me-1"></i>{{ amazon_results|length }}</span>
+                <span class="badge bg-danger"><i class="bi bi-shop me-1"></i>{{ daraz_results|length }}</span>
+            </div>
+        </div>
+        <i class="bi bi-bar-chart-fill fs-2 opacity-50"></i>
+    </div>
+</div>
+
+<!-- Platform Tabs -->
+<ul class="nav nav-tabs platform-tabs" id="platformTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="all-tab" data-bs-toggle="tab" data-bs-target="#all" type="button" role="tab">
+            <i class="bi bi-grid-3x3-gap-fill"></i> All Products ({{ amazon_results|length + daraz_results|length }})
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="amazon-tab" data-bs-toggle="tab" data-bs-target="#amazon" type="button" role="tab">
+            <i class="bi bi-amazon"></i> Amazon ({{ amazon_results|length }})
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link daraz" id="daraz-tab" data-bs-toggle="tab" data-bs-target="#daraz" type="button" role="tab">
+            <i class="bi bi-shop"></i> Daraz ({{ daraz_results|length }})
+        </button>
+    </li>
+</ul>
+
+<!-- Tab Content -->
+<div class="tab-content" id="platformTabsContent">
+    <!-- All Products Tab -->
+    <div class="tab-pane fade show active" id="all" role="tabpanel">
+        <div class="product-grid" id="allProductsGrid">
+           
+            <!-- Amazon Products -->
+            {% for product in amazon_results %}
+            <div class="product-card amazon" data-platform="amazon" data-asin="{{ product.asin }}" data-price="{{ product.price_numeric }}" data-rating="{{ product.rating_numeric }}" data-title="{{ product.title|lower }}">
+                <div class="product-badge badge-amazon">
+                    <i class="bi bi-amazon"></i> Amazon
+                </div>
+                {% if product.is_sponsored %}
+                <div class="product-badge badge-sponsored">
+                    <i class="bi bi-megaphone"></i> Sponsored
+                </div>
+                {% endif %}
+                
+                <div class="product-image-wrapper">
+                    <img src="{{ product.image_url }}" class="product-image" 
+                         alt="{{ product.title }}"
+                         onerror="this.src='https://via.placeholder.com/200?text=No+Image'">
+                </div>
+                
+                <div class="product-info">
+                    <h3 class="product-title">{{ product.title }}</h3>
+                    
+                    <div class="product-price-section">
+                        <span class="current-price">Rs. {{ "{:,.2f}".format(product.price_numeric) }}</span>
+                        <span class="currency-badge">PKR</span>
+                    </div>
+                    
+                    <div class="product-rating">
+                        <div class="stars">
+                            {% set rating = product.rating_numeric|float %}
+                            {% for i in range(5) %}
+                                {% if i < rating|int %}
+                                    <i class="bi bi-star-fill"></i>
+                                {% elif i < rating %}
+                                    <i class="bi bi-star-half"></i>
+                                {% else %}
+                                    <i class="bi bi-star"></i>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                        <span class="rating-value">{{ "%.1f"|format(rating) }}</span>
+                        <span class="review-count">({{ product.reviews }})</span>
+                    </div>
+                    
+                    <div class="product-meta">
+                        <span class="product-asin">ASIN: {{ product.asin }}</span>
+                        <a href="{{ product.url }}" target="_blank" class="view-btn">
+                            <i class="bi bi-box-arrow-up-right"></i> View
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+            
+            <!-- Daraz Products -->
+            {% for product in daraz_results %}
+            <div class="product-card daraz" data-platform="daraz" data-asin="{{ product.asin }}" data-price="{{ product.price_numeric }}" data-rating="{{ product.rating_numeric }}" data-title="{{ product.title|lower }}">
+                <div class="product-badge badge-daraz">
+                    <i class="bi bi-shop"></i> Daraz
+                </div>
+                {% if product.is_sponsored %}
+                <div class="product-badge badge-sponsored">
+                    <i class="bi bi-megaphone"></i> Sponsored
+                </div>
+                {% endif %}
+                
+                <div class="product-image-wrapper">
+                    <img src="{{ product.image_url }}" class="product-image" 
+                         alt="{{ product.title }}"
+                         onerror="this.src='https://via.placeholder.com/200?text=No+Image'">
+                </div>
+                
+                <div class="product-info">
+                    <h3 class="product-title">{{ product.title }}</h3>
+                    
+                    <div class="product-price-section">
+                        <span class="current-price">Rs. {{ "{:,.2f}".format(product.price_numeric) }}</span>
+                        <span class="currency-badge">PKR</span>
+                        {% if product.old_price != "N/A" and product.old_price_numeric and product.old_price_numeric > 0 %}
+                        <span class="old-price">Rs. {{ "{:,.2f}".format(product.old_price_numeric) }}</span>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="product-rating">
+                        <div class="stars">
+                            {% set rating = product.rating_numeric|float %}
+                            {% for i in range(5) %}
+                                {% if i < rating|int %}
+                                    <i class="bi bi-star-fill"></i>
+                                {% elif i < rating %}
+                                    <i class="bi bi-star-half"></i>
+                                {% else %}
+                                    <i class="bi bi-star"></i>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                        <span class="rating-value">{{ "%.1f"|format(rating) }}</span>
+                        <span class="review-count">({{ product.reviews }})</span>
+                    </div>
+                    
+                    <div class="product-meta">
+                        <span class="product-asin">ID: {{ product.asin }}</span>
+                        <a href="{{ product.url }}" target="_blank" class="view-btn">
+                            <i class="bi bi-box-arrow-up-right"></i> View
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <!-- Amazon Only Tab -->
+    <div class="tab-pane fade" id="amazon" role="tabpanel">
+        <div class="product-grid" id="amazonProductsGrid">
+            {% for product in amazon_results %}
+            <div class="product-card amazon" data-platform="amazon" data-asin="{{ product.asin }}" data-price="{{ product.price_numeric }}" data-rating="{{ product.rating_numeric }}" data-title="{{ product.title|lower }}">
+                <div class="product-badge badge-amazon">
+                    <i class="bi bi-amazon"></i> Amazon
+                </div>
+                {% if product.is_sponsored %}
+                <div class="product-badge badge-sponsored">
+                    <i class="bi bi-megaphone"></i> Sponsored
+                </div>
+                {% endif %}
+                
+                <div class="product-image-wrapper">
+                    <img src="{{ product.image_url }}" class="product-image" 
+                         alt="{{ product.title }}"
+                         onerror="this.src='https://via.placeholder.com/200?text=No+Image'">
+                </div>
+                
+                <div class="product-info">
+                    <h3 class="product-title">{{ product.title }}</h3>
+                    <div class="product-price-section">
+                        <span class="current-price">Rs. {{ "{:,.2f}".format(product.price_numeric) }}</span>
+                        <span class="currency-badge">PKR</span>
+                    </div>
+                    <div class="product-rating">
+                        <div class="stars">
+                            {% set rating = product.rating_numeric|float %}
+                            {% for i in range(5) %}
+                                {% if i < rating|int %}
+                                    <i class="bi bi-star-fill"></i>
+                                {% elif i < rating %}
+                                    <i class="bi bi-star-half"></i>
+                                {% else %}
+                                    <i class="bi bi-star"></i>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                        <span class="rating-value">{{ "%.1f"|format(rating) }}</span>
+                        <span class="review-count">({{ product.reviews }})</span>
+                    </div>
+                    <div class="product-meta">
+                        <span class="product-asin">ASIN: {{ product.asin }}</span>
+                        <a href="{{ product.url }}" target="_blank" class="view-btn">
+                            <i class="bi bi-box-arrow-up-right"></i> View
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <!-- Daraz Only Tab -->
+    <div class="tab-pane fade" id="daraz" role="tabpanel">
+        <div class="product-grid" id="darazProductsGrid">
+            {% for product in daraz_results %}
+            <div class="product-card daraz" data-platform="daraz" data-asin="{{ product.asin }}" data-price="{{ product.price_numeric }}" data-rating="{{ product.rating_numeric }}" data-title="{{ product.title|lower }}">
+                <div class="product-badge badge-daraz">
+                    <i class="bi bi-shop"></i> Daraz
+                </div>
+                {% if product.is_sponsored %}
+                <div class="product-badge badge-sponsored">
+                    <i class="bi bi-megaphone"></i> Sponsored
+                </div>
+                {% endif %}
+                
+                <div class="product-image-wrapper">
+                    <img src="{{ product.image_url }}" class="product-image" 
+                         alt="{{ product.title }}"
+                         onerror="this.src='https://via.placeholder.com/200?text=No+Image'">
+                </div>
+                
+                <div class="product-info">
+                    <h3 class="product-title">{{ product.title }}</h3>
+                    <div class="product-price-section">
+                        <span class="current-price">Rs. {{ "{:,.2f}".format(product.price_numeric) }}</span>
+                        <span class="currency-badge">PKR</span>
+                        {% if product.old_price != "N/A" and product.old_price_numeric and product.old_price_numeric > 0 %}
+                        <span class="old-price">Rs. {{ "{:,.2f}".format(product.old_price_numeric) }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="product-rating">
+                        <div class="stars">
+                            {% set rating = product.rating_numeric|float %}
+                            {% for i in range(5) %}
+                                {% if i < rating|int %}
+                                    <i class="bi bi-star-fill"></i>
+                                {% elif i < rating %}
+                                    <i class="bi bi-star-half"></i>
+                                {% else %}
+                                    <i class="bi bi-star"></i>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                        <span class="rating-value">{{ "%.1f"|format(rating) }}</span>
+                        <span class="review-count">({{ product.reviews }})</span>
+                    </div>
+                    <div class="product-meta">
+                        <span class="product-asin">ID: {{ product.asin }}</span>
+                        <a href="{{ product.url }}" target="_blank" class="view-btn">
+                            <i class="bi bi-box-arrow-up-right"></i> View
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Statistics Section - All in PKR -->
+{% if amazon_results or daraz_results %}
+<div class="row mt-5">
+    <div class="col-12">
+        <h3 class="mb-4"><i class="bi bi-graph-up"></i> Platform Statistics (PKR)</h3>
+    </div>
+    
+    <div class="col-md-3 mb-3">
+        <div class="stats-card">
+            <i class="bi bi-amazon fs-1" style="color: #ff9900;"></i>
+            <div class="stats-number">{{ amazon_results|length }}</div>
+            <div class="stats-label">Amazon Products</div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-3">
+        <div class="stats-card">
+            <i class="bi bi-shop fs-1" style="color: #f85606;"></i>
+            <div class="stats-number">{{ daraz_results|length }}</div>
+            <div class="stats-label">Daraz Products</div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-3">
+        <div class="stats-card">
+            <i class="bi bi-currency-rupee fs-1 text-success"></i>
+            <div class="stats-number">
+                {% set amazon_prices = amazon_results|map(attribute='price_numeric')|select('>', 0)|list %}
+                {% if amazon_prices %}
+                Rs. {{ "{:,.2f}".format(amazon_prices|sum / amazon_prices|length) }}
+                {% else %}
+                N/A
+                {% endif %}
+            </div>
+            <div class="stats-label">Amazon Avg Price</div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-3">
+        <div class="stats-card">
+            <i class="bi bi-currency-rupee fs-1 text-success"></i>
+            <div class="stats-number">
+                {% set daraz_prices = daraz_results|map(attribute='price_numeric')|select('>', 0)|list %}
+                {% if daraz_prices %}
+                Rs. {{ "{:,.2f}".format(daraz_prices|sum / daraz_prices|length) }}
+                {% else %}
+                N/A
+                {% endif %}
+            </div>
+            <div class="stats-label">Daraz Avg Price</div>
+        </div>
+    </div>
+</div>
+
+<!-- Price Distribution - All in PKR -->
+<div class="row mt-4">
+    <div class="col-md-6 mb-3">
+        <div class="stats-card">
+            <h5 class="mb-3"><i class="bi bi-amazon" style="color: #ff9900;"></i> Amazon Price Distribution (PKR)</h5>
+            {% set amazon_prices = amazon_results|map(attribute='price_numeric')|select('>', 0)|list %}
+            {% if amazon_prices %}
+                {% set min_price = amazon_prices|min %}
+                {% set max_price = amazon_prices|max %}
+                {% set avg_price = amazon_prices|sum / amazon_prices|length %}
+                <div class="price-distribution">
+                    <div class="mb-2">
+                        <small>Minimum: Rs. {{ "{:,.2f}".format(min_price) }}</small>
+                        <div class="progress">
+                            <div class="progress-bar bg-success" style="width: {{ (min_price / max_price * 100)|round }}%"></div>
+                        </div>
+                    </div>
+                    <div class="mb-2">
+                        <small>Average: Rs. {{ "{:,.2f}".format(avg_price) }}</small>
+                        <div class="progress">
+                            <div class="progress-bar bg-warning" style="width: {{ (avg_price / max_price * 100)|round }}%"></div>
+                        </div>
+                    </div>
+                    <div class="mb-2">
+                        <small>Maximum: Rs. {{ "{:,.2f}".format(max_price) }}</small>
+                        <div class="progress">
+                            <div class="progress-bar bg-danger" style="width: 100%"></div>
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <p class="text-muted mt-3">No price data available</p>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="col-md-6 mb-3">
+        <div class="stats-card">
+            <h5 class="mb-3"><i class="bi bi-shop" style="color: #f85606;"></i> Daraz Price Distribution (PKR)</h5>
+            {% set daraz_prices = daraz_results|map(attribute='price_numeric')|select('>', 0)|list %}
+            {% if daraz_prices %}
+                {% set min_price = daraz_prices|min %}
+                {% set max_price = daraz_prices|max %}
+                {% set avg_price = daraz_prices|sum / daraz_prices|length %}
+                <div class="price-distribution">
+                    <div class="mb-2">
+                        <small>Minimum: Rs. {{ "{:,.2f}".format(min_price) }}</small>
+                        <div class="progress">
+                            <div class="progress-bar bg-success" style="width: {{ (min_price / max_price * 100)|round }}%"></div>
+                        </div>
+                    </div>
+                    <div class="mb-2">
+                        <small>Average: Rs. {{ "{:,.2f}".format(avg_price) }}</small>
+                        <div class="progress">
+                            <div class="progress-bar bg-warning" style="width: {{ (avg_price / max_price * 100)|round }}%"></div>
+                        </div>
+                    </div>
+                    <div class="mb-2">
+                        <small>Maximum: Rs. {{ "{:,.2f}".format(max_price) }}</small>
+                        <div class="progress">
+                            <div class="progress-bar bg-danger" style="width: 100%"></div>
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <p class="text-muted mt-3">No price data available</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Comparison Table - All in PKR -->
+<div class="comparison-table">
+    <table class="table table-hover mb-0">
+        <thead>
+            <tr>
+                <th>Feature</th>
+                <th><span class="platform-icon icon-amazon"><i class="bi bi-amazon"></i></span> Amazon (PKR)</th>
+                <th><span class="platform-icon icon-daraz"><i class="bi bi-shop"></i></span> Daraz (PKR)</th>
+                <th>Comparison</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Total Products</strong></td>
+                <td><span class="badge bg-primary">{{ amazon_results|length }}</span></td>
+                <td><span class="badge bg-danger">{{ daraz_results|length }}</span></td>
+                <td>
+                    {% if amazon_results|length > daraz_results|length %}
+                    <span class="text-success">Amazon has {{ amazon_results|length - daraz_results|length }} more</span>
+                    {% elif daraz_results|length > amazon_results|length %}
+                    <span class="text-success">Daraz has {{ daraz_results|length - amazon_results|length }} more</span>
+                    {% else %}
+                    <span class="text-muted">Equal</span>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td><strong>Price Range</strong></td>
+                <td>
+                    {% set amazon_prices = amazon_results|map(attribute='price_numeric')|select('>', 0)|list %}
+                    {% if amazon_prices %}
+                    <span class="fw-bold">Rs. {{ "{:,.2f}".format(amazon_prices|min) }}</span> - 
+                    <span class="fw-bold">Rs. {{ "{:,.2f}".format(amazon_prices|max) }}</span>
+                    {% else %}
+                    <span class="text-muted">N/A</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% set daraz_prices = daraz_results|map(attribute='price_numeric')|select('>', 0)|list %}
+                    {% if daraz_prices %}
+                    <span class="fw-bold">Rs. {{ "{:,.2f}".format(daraz_prices|min) }}</span> - 
+                    <span class="fw-bold">Rs. {{ "{:,.2f}".format(daraz_prices|max) }}</span>
+                    {% else %}
+                    <span class="text-muted">N/A</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <span class="badge bg-info">Both in PKR</span>
+                </td>
+            </tr>
+            <tr>
+                <td><strong>Average Price</strong></td>
+                <td>
+                    {% set amazon_prices = amazon_results|map(attribute='price_numeric')|select('>', 0)|list %}
+                    {% if amazon_prices %}
+                    <span class="fw-bold">Rs. {{ "{:,.2f}".format(amazon_prices|sum / amazon_prices|length) }}</span>
+                    {% else %}
+                    <span class="text-muted">N/A</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% set daraz_prices = daraz_results|map(attribute='price_numeric')|select('>', 0)|list %}
+                    {% if daraz_prices %}
+                    <span class="fw-bold">Rs. {{ "{:,.2f}".format(daraz_prices|sum / daraz_prices|length) }}</span>
+                    {% else %}
+                    <span class="text-muted">N/A</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if amazon_prices and daraz_prices %}
+                        {% set amazon_avg = amazon_prices|sum / amazon_prices|length %}
+                        {% set daraz_avg = daraz_prices|sum / daraz_prices|length %}
+                        {% if amazon_avg > daraz_avg %}
+                        <span class="text-warning">Amazon is {{ ((amazon_avg - daraz_avg) / daraz_avg * 100)|round }}% higher</span>
+                        {% elif daraz_avg > amazon_avg %}
+                        <span class="text-success">Daraz is {{ ((daraz_avg - amazon_avg) / amazon_avg * 100)|round }}% higher</span>
+                        {% endif %}
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td><strong>Sponsored Products</strong></td>
+                <td>
+                    {% set sponsored_count = amazon_results|selectattr('is_sponsored', 'equalto', true)|list|length %}
+                    <span class="badge {% if sponsored_count > 0 %}bg-warning{% else %}bg-secondary{% endif %}">
+                        {{ sponsored_count }} / {{ amazon_results|length }}
+                    </span>
+                    {% if amazon_results|length > 0 %}
+                    <span class="ms-2 small">{{ (sponsored_count / amazon_results|length * 100)|round }}%</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% set sponsored_count = daraz_results|selectattr('is_sponsored', 'equalto', true)|list|length %}
+                    <span class="badge {% if sponsored_count > 0 %}bg-warning{% else %}bg-secondary{% endif %}">
+                        {{ sponsored_count }} / {{ daraz_results|length }}
+                    </span>
+                    {% if daraz_results|length > 0 %}
+                    <span class="ms-2 small">{{ (sponsored_count / daraz_results|length * 100)|round }}%</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% set amazon_sponsored = amazon_results|selectattr('is_sponsored', 'equalto', true)|list|length %}
+                    {% set daraz_sponsored = daraz_results|selectattr('is_sponsored', 'equalto', true)|list|length %}
+                    {% if amazon_sponsored > daraz_sponsored %}
+                    <span class="text-warning">Amazon has {{ amazon_sponsored - daraz_sponsored }} more sponsored</span>
+                    {% elif daraz_sponsored > amazon_sponsored %}
+                    <span class="text-warning">Daraz has {{ daraz_sponsored - amazon_sponsored }} more sponsored</span>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td><strong>Products with Ratings</strong></td>
+                <td>
+                    {% set rated = amazon_results|selectattr('rating_numeric', 'gt', 0)|list %}
+                    <span class="badge bg-success">{{ rated|length }} / {{ amazon_results|length }}</span>
+                    {% if amazon_results|length > 0 %}
+                    <span class="ms-2 small">{{ (rated|length / amazon_results|length * 100)|round }}%</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% set rated = daraz_results|selectattr('rating_numeric', 'gt', 0)|list %}
+                    <span class="badge bg-success">{{ rated|length }} / {{ daraz_results|length }}</span>
+                    {% if daraz_results|length > 0 %}
+                    <span class="ms-2 small">{{ (rated|length / daraz_results|length * 100)|round }}%</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% set amazon_rated = amazon_results|selectattr('rating_numeric', 'gt', 0)|list|length %}
+                    {% set daraz_rated = daraz_results|selectattr('rating_numeric', 'gt', 0)|list|length %}
+                    {% if amazon_rated > daraz_rated %}
+                    <span class="text-info">Amazon has {{ amazon_rated - daraz_rated }} more rated</span>
+                    {% elif daraz_rated > amazon_rated %}
+                    <span class="text-info">Daraz has {{ daraz_rated - amazon_rated }} more rated</span>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td><strong>Average Rating</strong></td>
+                <td>
+                    {% set amazon_rated = amazon_results|selectattr('rating_numeric', 'gt', 0)|list %}
+                    {% if amazon_rated %}
+                    <span class="fw-bold">{{ "%.2f"|format(amazon_rated|map(attribute='rating_numeric')|sum / amazon_rated|length) }} ⭐</span>
+                    {% else %}
+                    <span class="text-muted">N/A</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% set daraz_rated = daraz_results|selectattr('rating_numeric', 'gt', 0)|list %}
+                    {% if daraz_rated %}
+                    <span class="fw-bold">{{ "%.2f"|format(daraz_rated|map(attribute='rating_numeric')|sum / daraz_rated|length) }} ⭐</span>
+                    {% else %}
+                    <span class="text-muted">N/A</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% set amazon_avg = amazon_rated|map(attribute='rating_numeric')|sum / amazon_rated|length if amazon_rated else 0 %}
+                    {% set daraz_avg = daraz_rated|map(attribute='rating_numeric')|sum / daraz_rated|length if daraz_rated else 0 %}
+                    {% if amazon_avg > daraz_avg %}
+                    <span class="text-success">Amazon ratings higher</span>
+                    {% elif daraz_avg > amazon_avg %}
+                    <span class="text-success">Daraz ratings higher</span>
+                    {% endif %}
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<!-- Currency Note -->
+<div class="alert alert-info mt-3">
+    <i class="bi bi-info-circle"></i> 
+    <strong>All prices are in Pakistani Rupees (PKR).</strong> Both Amazon and Daraz prices are shown in PKR for easy comparison.
+</div>
+{% endif %}
+
+<!-- Action Buttons -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="btn-group" role="group">
+            <button class="btn btn-outline-primary" onclick="exportResults('json')">
+                <i class="bi bi-filetype-json"></i> Export JSON
+            </button>
+            <button class="btn btn-outline-success" onclick="exportResults('csv')">
+                <i class="bi bi-filetype-csv"></i> Export CSV
+            </button>
+            <button class="btn btn-outline-info" onclick="window.print()">
+                <i class="bi bi-printer"></i> Print
+            </button>
+        </div>
+        <a href="{{ url_for('index') }}" class="btn btn-secondary float-end">
+            <i class="bi bi-arrow-left"></i> New Search
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Filter and Sort functions
+function filterProducts() {
+    const filter = document.getElementById('filterInput').value.toLowerCase();
+    const products = document.querySelectorAll('.product-card');
+    let visibleCount = 0;
+    
+    products.forEach(product => {
+        const title = product.querySelector('.product-title').textContent.toLowerCase();
+        if (title.includes(filter)) {
+            product.style.display = '';
+            visibleCount++;
+        } else {
+            product.style.display = 'none';
+        }
+    });
+}
+
+function sortProducts() {
+    const sortBy = document.getElementById('sortSelect').value;
+    const container = document.querySelector('.tab-pane.active .product-grid');
+    if (!container) return;
+    
+    const products = Array.from(container.querySelectorAll('.product-card'));
+    
+    if (sortBy === 'price-asc') {
+        products.sort((a, b) => {
+            const priceA = parseFloat(a.dataset.price || 0);
+            const priceB = parseFloat(b.dataset.price || 0);
+            return priceA - priceB;
+        });
+    } else if (sortBy === 'price-desc') {
+        products.sort((a, b) => {
+            const priceA = parseFloat(a.dataset.price || 0);
+            const priceB = parseFloat(b.dataset.price || 0);
+            return priceB - priceA;
+        });
+    } else if (sortBy === 'rating') {
+        products.sort((a, b) => {
+            const ratingA = parseFloat(a.dataset.rating || 0);
+            const ratingB = parseFloat(b.dataset.rating || 0);
+            return ratingB - ratingA;
+        });
+    } else if (sortBy === 'title') {
+        products.sort((a, b) => {
+            const titleA = a.dataset.title || '';
+            const titleB = b.dataset.title || '';
+            return titleA.localeCompare(titleB);
+        });
+    }
+    
+    products.forEach(product => container.appendChild(product));
+}
+
+function filterByPlatform() {
+    const platform = document.getElementById('platformFilter').value;
+    const products = document.querySelectorAll('.product-card');
+    
+    products.forEach(product => {
+        if (platform === 'all') {
+            product.style.display = '';
+        } else if (platform === 'amazon') {
+            product.style.display = product.classList.contains('amazon') ? '' : 'none';
+        } else if (platform === 'daraz') {
+            product.style.display = product.classList.contains('daraz') ? '' : 'none';
+        }
+    });
+}
+
+function resetFilters() {
+    document.getElementById('filterInput').value = '';
+    document.getElementById('sortSelect').value = '';
+    document.getElementById('platformFilter').value = 'all';
+    
+    const products = document.querySelectorAll('.product-card');
+    products.forEach(product => {
+        product.style.display = '';
+    });
+}
+
+// Export functions
+function exportResults(format) {
+    window.location.href = `/export/${format}`;
+}
+</script>
+{% endblock %}
