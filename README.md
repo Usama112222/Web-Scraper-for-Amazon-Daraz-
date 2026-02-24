@@ -80,33 +80,30 @@ project/
 │── config.py
 │── requirements.txt
 │── .gitignore
+
 ⚙️ Installation
+
 1️⃣ Clone the repository
+
 git clone https://github.com/YOUR_USERNAME/YOUR_REPO.git
 cd YOUR_REPO
+
 2️⃣ Create virtual environment
+
 python -m venv venv
 venv\Scripts\activate   # Windows
+
 3️⃣ Install dependencies
+
 pip install -r requirements.txt
+
 4️⃣ Run the app
+
 python app.py
 
 Open in browser:
 
 http://127.0.0.1:5000
-📌 Available Routes
-Method	Route	Description
-GET	/	Home page
-POST	/search	Search products
-GET	/compare	View last results
-POST	/api/search	JSON API search
-POST	/api/search/async	Async search
-GET	/api/progress/<id>	Track progress
-GET	/export/summary	Export summary stats
-GET	/clear	Clear session
-🔐 Configuration
-
 
 ⚠️ Disclaimer
 
