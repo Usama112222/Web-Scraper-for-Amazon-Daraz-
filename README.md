@@ -1,20 +1,20 @@
-🛒 Amazon & Daraz Product Comparison Scraper
+# 🛒 Amazon & Daraz Product Comparison Scraper
 
 A powerful Flask-based web application that scrapes and compares products from Amazon (USD) and Daraz (PKR) in real-time.
 
 This tool allows users to search for any product keyword and instantly compare:
 
-💰 Prices
+## 💰 Prices
 
-⭐ Ratings
+## ⭐ Ratings
 
-📦 Sponsored listings
+## 📦 Sponsored listings
 
-📊 Summary statistics
+## 📊 Summary statistics
 
-🔄 Cross-platform product comparison
+## 🔄 Cross-platform product comparison
 
-🚀 Features
+## 🚀 Features
 🔎 Multi-Platform Scraping
 
 Scrapes products from:
@@ -27,7 +27,7 @@ Supports unlimited page scraping
 
 Optional page limit input
 
-📊 Product Comparison
+## 📊 Product Comparison
 
 Compare products across both platforms
 
@@ -35,7 +35,7 @@ View detailed product comparisons
 
 Currency-aware price formatting
 
-⚡ Async Scraping (For Large Searches)
+## ⚡ Async Scraping (For Large Searches)
 
 Background scraping using threading
 
@@ -43,7 +43,7 @@ Live progress tracking API
 
 Session-based progress monitoring
 
-📤 Export Options
+## 📤 Export Options
 
 Export summary statistics (JSON)
 
@@ -51,7 +51,7 @@ View average price, min/max price
 
 Sponsored product percentage
 
-🌐 REST API Support
+## 🌐 REST API Support
 
 /api/search – JSON product search
 
@@ -59,7 +59,7 @@ Sponsored product percentage
 
 /api/progress/<id> – Track scraping progress
 
-🏗️ Built With
+## 🏗️ Built With
 
 Python 3
 
@@ -70,16 +70,6 @@ Pandas
 Threading
 
 Custom Web Scrapers
-
-📂 Project Structure
-project/
-│── app.py
-│── scrapers/
-│── templates/
-│── static/
-│── config.py
-│── requirements.txt
-│── .gitignore
 
 ⚙️ Installation
 
@@ -105,7 +95,7 @@ Open in browser:
 
 http://127.0.0.1:5000
 
-⚠️ Disclaimer
+## ⚠️ Disclaimer
 
 This project is for educational purposes only.
 Web scraping should comply with each platform's Terms of Service.
